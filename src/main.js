@@ -452,7 +452,17 @@ function editRecipientPublicKey() {
 
   fields.encryptPublicKey.value = nextPublicKey.trim();
   updateRecipientPublicKey(fields.encryptPublicKey.value);
+  persistFragmentParam(publicKeyQueryName, fields.encryptPublicKey.value);
   setStatus("已更新接收者公钥。", "ok");
+}
+
+function persistFragmentParam(name, value) {
+  const url = createCleanUrl();
+  const fragmentParams = new URLSearchParams(window.location.hash.slice(1));
+
+  fragmentParams.set(name, value.trim());
+  url.hash = fragmentParams.toString();
+  window.history.replaceState(null, "", url);
 }
 
 async function copyField(field, message) {
