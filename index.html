@@ -29,7 +29,7 @@
         <div class="section-head">
           <div>
             <h2 id="send-title">我要传递秘密</h2>
-            <p>确认链接里的收件人公钥，输入明文，加密后复制密文发给对方。</p>
+            <p>确认链接里的收件人公钥，输入明文。短密文会生成链接，长密文需要复制粘贴。</p>
           </div>
         </div>
         <label>
@@ -43,7 +43,12 @@
         <div class="actions">
           <button id="encrypt" type="button">加密内容</button>
           <button id="copy-ciphertext" type="button" class="secondary">复制密文</button>
+          <button id="copy-ciphertext-url" type="button" class="secondary">复制密文链接</button>
         </div>
+        <label>
+          <span>密文链接</span>
+          <textarea id="ciphertext-url" spellcheck="false" placeholder="密文不超过 1024 字符时自动生成"></textarea>
+        </label>
         <label>
           <span>密文</span>
           <textarea id="ciphertext" spellcheck="false" placeholder="base64 密文，加密后复制给接收者"></textarea>

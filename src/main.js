@@ -7,6 +7,8 @@ const textDecoder = new TextDecoder();
 const base58Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 const modeQueryName = "mode";
 const publicKeyQueryName = "public_key";
+const ciphertextQueryName = "ciphertext";
+const maxCiphertextQueryLength = 1024;
 const modes = {
   receive: "receive",
   send: "send",
@@ -23,6 +25,7 @@ const fields = {
   encryptPublicKey: document.querySelector("#encrypt-public-key"),
   plaintext: document.querySelector("#plaintext"),
   ciphertext: document.querySelector("#ciphertext"),
+  ciphertextUrl: document.querySelector("#ciphertext-url"),
   decryptPackage: document.querySelector("#decrypt-package"),
   decrypted: document.querySelector("#decrypted"),
   status: document.querySelector("#status"),
@@ -34,6 +37,7 @@ document.querySelector("#decrypt").addEventListener("click", runDecrypt);
 document.querySelector("#copy-private-key").addEventListener("click", () => copyField(fields.privateKey, "已复制私钥。"));
 document.querySelector("#copy-share-url").addEventListener("click", () => copyField(fields.shareUrl, "已复制加密链接。"));
 document.querySelector("#copy-ciphertext").addEventListener("click", () => copyField(fields.ciphertext, "已复制密文。"));
+document.querySelector("#copy-ciphertext-url").addEventListener("click", () => copyField(fields.ciphertextUrl, "已复制密文链接。"));
 document.querySelector("#copy-decrypted").addEventListener("click", () => copyField(fields.decrypted, "已复制明文。"));
 fields.receiveMode.addEventListener("click", () => setMode(modes.receive));
 fields.sendMode.addEventListener("click", () => setMode(modes.send));
@@ -57,7 +61,13 @@ async function runEncrypt() {
 
     fields.ciphertext.value = encodeBase64(ciphertext);
     fields.decryptPackage.value = fields.ciphertext.value;
-    setStatus("加密完成。", "ok");
+    fields.ciphertextUrl.value = createCiphertextUrl(fields.ciphertext.value);
+
+    if (fields.ciphertextUrl.value) {
+      setStatus("加密完成。密文较短，已生成可分享的密文链接。", "ok");
+    } else {
+      setStatus("加密完成。密文超过 1024 字符，请复制密文粘贴发送。", "ok");
+    }
   });
 }
 
@@ -297,14 +307,18 @@ function initializeFromUrl() {
   const searchParams = new URLSearchParams(window.location.search);
   const mode = normalizeMode(searchParams.get(modeQueryName));
   const publicKey = searchParams.get(publicKeyQueryName) ?? "";
+  const ciphertext = searchParams.get(ciphertextQueryName) ?? "";
 
   fields.publicKey.value = publicKey;
   fields.encryptPublicKey.value = publicKey;
   fields.shareUrl.value = publicKey ? createShareUrl(publicKey) : "";
+  fields.decryptPackage.value = ciphertext;
   setMode(mode, false);
 
   if (mode === modes.send && publicKey) {
     setStatus("已从 URL 读取收件人公钥。", "ok");
+  } else if (mode === modes.receive && ciphertext) {
+    setStatus("已从 URL 读取密文。", "ok");
   }
 }
 
@@ -347,6 +361,22 @@ function createShareUrl(publicKey) {
 
   url.searchParams.set(modeQueryName, modes.send);
   url.searchParams.set(publicKeyQueryName, publicKey.trim());
+  url.searchParams.delete(ciphertextQueryName);
+  return url.toString();
+}
+
+function createCiphertextUrl(ciphertext) {
+  const trimmedCiphertext = ciphertext.trim();
+
+  if (trimmedCiphertext.length > maxCiphertextQueryLength) {
+    return "";
+  }
+
+  const url = new URL(window.location.href);
+
+  url.searchParams.set(modeQueryName, modes.receive);
+  url.searchParams.set(ciphertextQueryName, trimmedCiphertext);
+  url.searchParams.delete(publicKeyQueryName);
   return url.toString();
 }
 
