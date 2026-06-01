@@ -320,7 +320,7 @@ function initializeFromUrl() {
   const searchParams = new URLSearchParams(window.location.search);
   const fragmentPayload = readFragmentPayload();
   const mode = normalizeMode(searchParams.get(modeQueryName));
-  const publicKey = fragmentPayload.publicKey || searchParams.get(publicKeyQueryName) || "";
+  const publicKey = fragmentPayload.publicKey;
   const ciphertext = fragmentPayload.ciphertext;
 
   fields.publicKey.value = publicKey;
@@ -366,7 +366,8 @@ function persistPublicKey(publicKey, mode) {
   const url = new URL(window.location.href);
 
   url.searchParams.set(modeQueryName, mode);
-  url.searchParams.set(publicKeyQueryName, publicKey.trim());
+  url.searchParams.delete(publicKeyQueryName);
+  url.hash = new URLSearchParams({ [publicKeyQueryName]: publicKey.trim() }).toString();
   window.history.replaceState(null, "", url);
 }
 
@@ -374,8 +375,8 @@ function createShareUrl(publicKey) {
   const url = new URL(window.location.href);
 
   url.searchParams.set(modeQueryName, modes.send);
-  url.searchParams.set(publicKeyQueryName, publicKey.trim());
-  url.hash = "";
+  url.searchParams.delete(publicKeyQueryName);
+  url.hash = new URLSearchParams({ [publicKeyQueryName]: publicKey.trim() }).toString();
   return url.toString();
 }
 
