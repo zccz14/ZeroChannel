@@ -7,8 +7,8 @@ const textDecoder = new TextDecoder();
 const base58Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 const modeQueryName = "mode";
 const publicKeyQueryName = "public_key";
-const ciphertextQueryName = "ciphertext";
-const maxCiphertextQueryLength = 1024;
+const payloadFragmentName = "payload";
+const maxCiphertextUrlPayloadLength = 1024;
 const modes = {
   receive: "receive",
   send: "send",
@@ -303,9 +303,17 @@ function decodeBase58(value) {
 
 function initializeFromUrl() {
   const searchParams = new URLSearchParams(window.location.search);
+  let fragmentPayload = { publicKey: "", ciphertext: "" };
+
+  try {
+    fragmentPayload = readFragmentPayload();
+  } catch (error) {
+    setStatus(error instanceof Error ? error.message : "链接载荷无效。", "error");
+  }
+
   const mode = normalizeMode(searchParams.get(modeQueryName));
-  const publicKey = searchParams.get(publicKeyQueryName) ?? "";
-  const ciphertext = searchParams.get(ciphertextQueryName) ?? "";
+  const publicKey = fragmentPayload.publicKey || searchParams.get(publicKeyQueryName) || "";
+  const ciphertext = fragmentPayload.ciphertext;
 
   fields.publicKey.value = publicKey;
   fields.encryptPublicKey.value = publicKey;
@@ -359,23 +367,59 @@ function createShareUrl(publicKey) {
 
   url.searchParams.set(modeQueryName, modes.send);
   url.searchParams.set(publicKeyQueryName, publicKey.trim());
-  url.searchParams.delete(ciphertextQueryName);
+  url.hash = "";
   return url.toString();
 }
 
 function createCiphertextUrl(ciphertext) {
   const trimmedCiphertext = ciphertext.trim();
 
-  if (trimmedCiphertext.length > maxCiphertextQueryLength) {
+  if (trimmedCiphertext.length > maxCiphertextUrlPayloadLength) {
     return "";
   }
 
   const url = new URL(window.location.href);
 
   url.searchParams.set(modeQueryName, modes.receive);
-  url.searchParams.set(ciphertextQueryName, trimmedCiphertext);
-  url.searchParams.set(publicKeyQueryName, fields.encryptPublicKey.value.trim());
+  url.searchParams.delete(publicKeyQueryName);
+  url.hash = `${payloadFragmentName}=${encodeBase64UrlJson({
+    public_key: fields.encryptPublicKey.value.trim(),
+    ciphertext: trimmedCiphertext,
+  })}`;
   return url.toString();
+}
+
+function readFragmentPayload() {
+  const payload = new URLSearchParams(window.location.hash.slice(1)).get(payloadFragmentName);
+
+  if (!payload) {
+    return { publicKey: "", ciphertext: "" };
+  }
+
+  const decoded = decodeBase64UrlJson(payload);
+  return {
+    publicKey: (decoded && decoded.public_key) || "",
+    ciphertext: (decoded && decoded.ciphertext) || "",
+  };
+}
+
+function encodeBase64UrlJson(value) {
+  return encodeBase64(textEncoder.encode(JSON.stringify(value)))
+    .replaceAll("+", "-")
+    .replaceAll("/", "_")
+    .replaceAll("=", "");
+}
+
+function decodeBase64UrlJson(value) {
+  const base64 = value.replaceAll("-", "+").replaceAll("_", "/");
+  const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
+  const bytes = decodeBase64Field(padded, "链接载荷");
+
+  try {
+    return JSON.parse(textDecoder.decode(bytes));
+  } catch (error) {
+    throw new Error("链接载荷不是有效的 JSON。", { cause: error });
+  }
 }
 
 function updatePublicKeyFromPrivateKey() {
