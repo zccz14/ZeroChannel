@@ -72,14 +72,13 @@
           <span>收到的密文</span>
           <textarea id="decrypt-package" spellcheck="false" placeholder="粘贴完整 base64 密文"></textarea>
         </label>
-        <div class="actions">
-          <button id="paste-ciphertext" type="button" class="secondary">粘贴密文</button>
-          <button id="decrypt" type="button">解密内容</button>
-          <button id="copy-decrypted" type="button" class="secondary">复制明文</button>
-        </div>
+        <button id="decrypt" type="button" class="full-action decrypt-action">解密内容</button>
         <label>
-          <span>解密结果</span>
-          <textarea id="decrypted" spellcheck="false" placeholder="解密后显示"></textarea>
+          <span class="field-title-row">
+            <span>解密结果</span>
+            <button id="copy-decrypted" type="button" class="secondary compact-button">复制明文</button>
+          </span>
+          <textarea id="decrypted" spellcheck="false" placeholder="解密后显示" readonly></textarea>
         </label>
       </section>
 

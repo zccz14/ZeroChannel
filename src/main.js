@@ -33,7 +33,6 @@ document.querySelector("#encrypt").addEventListener("click", runEncrypt);
 document.querySelector("#decrypt").addEventListener("click", runDecrypt);
 document.querySelector("#copy-private-key").addEventListener("click", () => copyField(fields.privateKey, "已复制私钥。"));
 document.querySelector("#copy-share-url").addEventListener("click", copyShareUrl);
-document.querySelector("#paste-ciphertext").addEventListener("click", pasteCiphertext);
 document.querySelector("#copy-decrypted").addEventListener("click", () => copyField(fields.decrypted, "已复制明文。"));
 fields.receiveMode.addEventListener("click", () => setMode(modes.receive));
 fields.sendMode.addEventListener("click", () => setMode(modes.send));
@@ -469,13 +468,6 @@ async function copyShareUrl() {
   await presentErrors(async () => {
     await navigator.clipboard.writeText(createShareUrl(publicKey));
     setStatus("已复制加密链接。", "ok");
-  });
-}
-
-async function pasteCiphertext() {
-  await presentErrors(async () => {
-    fields.decryptPackage.value = await navigator.clipboard.readText();
-    setStatus("已粘贴密文。", "ok");
   });
 }
 

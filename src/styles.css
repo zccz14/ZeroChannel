@@ -249,6 +249,26 @@ textarea::placeholder {
   width: 100%;
 }
 
+.decrypt-action {
+  margin: 6px 0 14px;
+}
+
+.field-title-row {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.compact-button {
+  min-height: 2.2rem;
+  padding: 0.5rem 0.85rem;
+}
+
+textarea[readonly] {
+  cursor: text;
+}
+
 .compact-actions {
   margin-top: 0;
 }
