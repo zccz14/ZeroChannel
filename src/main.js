@@ -5,15 +5,24 @@ import "./styles.css";
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 const base58Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+const modeQueryName = "mode";
 const publicKeyQueryName = "public_key";
+const modes = {
+  receive: "receive",
+  send: "send",
+};
 
 const fields = {
+  sendView: document.querySelector("#send-view"),
+  receiveView: document.querySelector("#receive-view"),
+  sendMode: document.querySelector("#send-mode"),
+  receiveMode: document.querySelector("#receive-mode"),
   publicKey: document.querySelector("#public-key"),
   privateKey: document.querySelector("#private-key"),
+  shareUrl: document.querySelector("#share-url"),
   encryptPublicKey: document.querySelector("#encrypt-public-key"),
   plaintext: document.querySelector("#plaintext"),
   ciphertext: document.querySelector("#ciphertext"),
-  decryptPrivateKey: document.querySelector("#decrypt-private-key"),
   decryptPackage: document.querySelector("#decrypt-package"),
   decrypted: document.querySelector("#decrypted"),
   status: document.querySelector("#status"),
@@ -22,9 +31,14 @@ const fields = {
 document.querySelector("#generate-key").addEventListener("click", generateKeyPair);
 document.querySelector("#encrypt").addEventListener("click", runEncrypt);
 document.querySelector("#decrypt").addEventListener("click", runDecrypt);
-fields.publicKey.addEventListener("input", () => persistPublicKey(fields.publicKey.value));
+document.querySelector("#copy-private-key").addEventListener("click", () => copyField(fields.privateKey, "已复制私钥。"));
+document.querySelector("#copy-share-url").addEventListener("click", () => copyField(fields.shareUrl, "已复制加密链接。"));
+document.querySelector("#copy-ciphertext").addEventListener("click", () => copyField(fields.ciphertext, "已复制密文。"));
+document.querySelector("#copy-decrypted").addEventListener("click", () => copyField(fields.decrypted, "已复制明文。"));
+fields.receiveMode.addEventListener("click", () => setMode(modes.receive));
+fields.sendMode.addEventListener("click", () => setMode(modes.send));
 
-loadPublicKeyFromUrl();
+initializeFromUrl();
 
 function generateKeyPair() {
   const { publicKey, secretKey } = nacl.sign.keyPair();
@@ -32,9 +46,9 @@ function generateKeyPair() {
   fields.publicKey.value = encodeBase58(publicKey);
   fields.privateKey.value = encodeBase58(secretKey);
   fields.encryptPublicKey.value = fields.publicKey.value;
-  fields.decryptPrivateKey.value = fields.privateKey.value;
-  persistPublicKey(fields.publicKey.value);
-  setStatus("已生成 base58 ED25519 密钥对，并已把公钥写入 URL。", "ok");
+  persistPublicKey(fields.publicKey.value, modes.receive);
+  fields.shareUrl.value = createShareUrl(fields.publicKey.value);
+  setStatus("已生成密钥。请保存私钥，并把加密链接发给对方。", "ok");
 }
 
 async function runEncrypt() {
@@ -50,7 +64,7 @@ async function runEncrypt() {
 async function runDecrypt() {
   await presentErrors(async () => {
     const encryptedData = decodeBase64Field(fields.decryptPackage.value, "密文");
-    const plaintext = await decryptByPrivateKeyAsync(encryptedData, fields.decryptPrivateKey.value);
+    const plaintext = await decryptByPrivateKeyAsync(encryptedData, fields.privateKey.value);
 
     fields.decrypted.value = textDecoder.decode(plaintext);
     setStatus("解密完成。", "ok");
@@ -279,29 +293,75 @@ function decodeBase58(value) {
   return new Uint8Array(bytes.reverse());
 }
 
-function loadPublicKeyFromUrl() {
-  const publicKey = new URLSearchParams(window.location.search).get(publicKeyQueryName);
-
-  if (!publicKey) {
-    return;
-  }
+function initializeFromUrl() {
+  const searchParams = new URLSearchParams(window.location.search);
+  const mode = normalizeMode(searchParams.get(modeQueryName));
+  const publicKey = searchParams.get(publicKeyQueryName) ?? "";
 
   fields.publicKey.value = publicKey;
   fields.encryptPublicKey.value = publicKey;
-  setStatus("已从 URL 读取收件人公钥。", "ok");
+  fields.shareUrl.value = publicKey ? createShareUrl(publicKey) : "";
+  setMode(mode, false);
+
+  if (mode === modes.send && publicKey) {
+    setStatus("已从 URL 读取收件人公钥。", "ok");
+  }
 }
 
-function persistPublicKey(publicKey) {
-  const url = new URL(window.location.href);
-  const trimmedPublicKey = publicKey.trim();
+function normalizeMode(mode) {
+  return mode === modes.send ? modes.send : modes.receive;
+}
 
-  if (!trimmedPublicKey) {
-    url.searchParams.delete(publicKeyQueryName);
-  } else {
-    url.searchParams.set(publicKeyQueryName, trimmedPublicKey);
+function setMode(mode, shouldPersist = true) {
+  const nextMode = normalizeMode(mode);
+  const isSendMode = nextMode === modes.send;
+
+  fields.sendView.hidden = !isSendMode;
+  fields.receiveView.hidden = isSendMode;
+  fields.sendMode.setAttribute("aria-pressed", String(isSendMode));
+  fields.receiveMode.setAttribute("aria-pressed", String(!isSendMode));
+
+  if (shouldPersist) {
+    persistMode(nextMode);
+    setStatus(isSendMode ? "已切换到传递秘密。" : "已切换到接受秘密。", "ok");
+  }
+}
+
+function persistMode(mode) {
+  const url = new URL(window.location.href);
+
+  url.searchParams.set(modeQueryName, mode);
+  window.history.replaceState(null, "", url);
+}
+
+function persistPublicKey(publicKey, mode) {
+  const url = new URL(window.location.href);
+
+  url.searchParams.set(modeQueryName, mode);
+  url.searchParams.set(publicKeyQueryName, publicKey.trim());
+  window.history.replaceState(null, "", url);
+}
+
+function createShareUrl(publicKey) {
+  const url = new URL(window.location.href);
+
+  url.searchParams.set(modeQueryName, modes.send);
+  url.searchParams.set(publicKeyQueryName, publicKey.trim());
+  return url.toString();
+}
+
+async function copyField(field, message) {
+  const value = field.value.trim();
+
+  if (!value) {
+    setStatus("没有可复制的内容。", "error");
+    return;
   }
 
-  window.history.replaceState(null, "", url);
+  await presentErrors(async () => {
+    await navigator.clipboard.writeText(value);
+    setStatus(message, "ok");
+  });
 }
 
 function setStatus(message, tone = "neutral") {

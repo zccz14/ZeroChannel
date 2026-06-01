@@ -11,75 +11,81 @@
   </head>
   <body>
     <main class="shell">
-      <section class="hero" aria-labelledby="page-title">
+      <header class="hero" aria-labelledby="page-title">
         <div>
           <p class="kicker">ZeroChannel</p>
-          <h1 id="page-title">本地生成、本地加密、本地解密。</h1>
+          <h1 id="page-title">用一个链接传递秘密。</h1>
           <p class="hero-copy">
-            使用 base58 ED25519 密钥，映射到 Curve25519 加密 AES-GCM 数据密钥。所有操作只在浏览器内完成。
+            接收者生成密钥和加密链接，发送者打开链接加密内容。密钥和密文处理都只在浏览器内完成。
           </p>
         </div>
-        <aside class="note" aria-label="安全说明">
-          <strong>格式说明</strong>
-          <span>公钥会写入 URL Query。复制当前地址，就能把收件公钥传给别人。</span>
-        </aside>
-      </section>
+        <nav class="mode-switch" aria-label="选择用途">
+          <button id="receive-mode" type="button" class="mode-button" data-mode-button="receive">我要接受秘密</button>
+          <button id="send-mode" type="button" class="mode-button" data-mode-button="send">我要传递秘密</button>
+        </nav>
+      </header>
 
-      <section class="panel key-panel" aria-labelledby="keys-title">
+      <section id="send-view" class="panel purpose-view" aria-labelledby="send-title">
         <div class="section-head">
           <div>
-            <h2 id="keys-title">1. 生成加密密钥</h2>
-            <p>公钥可分享，私钥只保存在你自己这里。密钥使用 base58 编码。</p>
+            <h2 id="send-title">我要传递秘密</h2>
+            <p>确认链接里的收件人公钥，输入明文，加密后复制密文发给对方。</p>
+          </div>
+        </div>
+        <label>
+          <span>收件人公钥</span>
+          <textarea id="encrypt-public-key" spellcheck="false" placeholder="从 URL 自动读取，或粘贴 base58 公钥"></textarea>
+        </label>
+        <label>
+          <span>明文</span>
+          <textarea id="plaintext" spellcheck="false" placeholder="输入要传递的秘密"></textarea>
+        </label>
+        <div class="actions">
+          <button id="encrypt" type="button">加密内容</button>
+          <button id="copy-ciphertext" type="button" class="secondary">复制密文</button>
+        </div>
+        <label>
+          <span>密文</span>
+          <textarea id="ciphertext" spellcheck="false" placeholder="base64 密文，加密后复制给接收者"></textarea>
+        </label>
+      </section>
+
+      <section id="receive-view" class="panel purpose-view" aria-labelledby="receive-title">
+        <div class="section-head">
+          <div>
+            <h2 id="receive-title">我要接受秘密</h2>
+            <p>生成密钥，保存私钥，复制加密链接发给别人。收到密文后在这里解密。</p>
           </div>
           <button id="generate-key" type="button">生成密钥对</button>
         </div>
         <div class="field-grid">
           <label>
-            <span>公钥</span>
-            <textarea id="public-key" spellcheck="false" placeholder="base58 公钥，会同步到 URL"></textarea>
+            <span>私钥</span>
+            <textarea id="private-key" spellcheck="false" placeholder="base58 私钥，请复制到安全位置保存"></textarea>
           </label>
           <label>
-            <span>私钥</span>
-            <textarea id="private-key" spellcheck="false" placeholder="base58 私钥，请妥善保存"></textarea>
+            <span>加密链接</span>
+            <textarea id="share-url" spellcheck="false" placeholder="生成密钥后显示，发给需要传递秘密的人"></textarea>
           </label>
         </div>
-      </section>
-
-      <div class="work-grid">
-        <section class="panel" aria-labelledby="encrypt-title">
-          <h2 id="encrypt-title">2. 加密</h2>
-          <label>
-            <span>收件人公钥</span>
-            <textarea id="encrypt-public-key" spellcheck="false" placeholder="粘贴对方 base58 公钥，或从 URL 自动读取"></textarea>
-          </label>
-          <label>
-            <span>明文</span>
-            <textarea id="plaintext" spellcheck="false" placeholder="输入要加密的内容"></textarea>
-          </label>
-          <button id="encrypt" type="button">加密内容</button>
-          <label>
-            <span>密文</span>
-            <textarea id="ciphertext" spellcheck="false" placeholder="base64 密文，加密后可发送"></textarea>
-          </label>
-        </section>
-
-        <section class="panel" aria-labelledby="decrypt-title">
-          <h2 id="decrypt-title">3. 解密</h2>
-          <label>
-            <span>你的私钥</span>
-            <textarea id="decrypt-private-key" spellcheck="false" placeholder="粘贴你的私钥"></textarea>
-          </label>
-          <label>
-            <span>收到的密文</span>
-            <textarea id="decrypt-package" spellcheck="false" placeholder="粘贴完整 base64 密文"></textarea>
-          </label>
+        <input id="public-key" type="hidden" />
+        <div class="actions compact-actions">
+          <button id="copy-private-key" type="button" class="secondary">复制私钥</button>
+          <button id="copy-share-url" type="button" class="secondary">复制加密链接</button>
+        </div>
+        <label>
+          <span>收到的密文</span>
+          <textarea id="decrypt-package" spellcheck="false" placeholder="粘贴完整 base64 密文"></textarea>
+        </label>
+        <div class="actions">
           <button id="decrypt" type="button">解密内容</button>
-          <label>
-            <span>解密结果</span>
-            <textarea id="decrypted" spellcheck="false" placeholder="解密后显示"></textarea>
-          </label>
-        </section>
-      </div>
+          <button id="copy-decrypted" type="button" class="secondary">复制明文</button>
+        </div>
+        <label>
+          <span>解密结果</span>
+          <textarea id="decrypted" spellcheck="false" placeholder="解密后显示"></textarea>
+        </label>
+      </section>
 
       <p id="status" class="status" role="status" aria-live="polite">准备就绪。</p>
     </main>
