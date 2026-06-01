@@ -20,7 +20,7 @@
           </p>
         </div>
         <nav class="mode-switch" aria-label="选择用途">
-          <button id="receive-mode" type="button" class="mode-button" data-mode-button="receive">我要接受秘密</button>
+          <button id="receive-mode" type="button" class="mode-button" data-mode-button="receive">我要接收秘密</button>
           <button id="send-mode" type="button" class="mode-button" data-mode-button="send">我要传递秘密</button>
         </nav>
       </header>
@@ -50,21 +50,15 @@
       <section id="receive-view" class="panel purpose-view" aria-labelledby="receive-title">
         <div class="section-head">
           <div>
-            <h2 id="receive-title">我要接受秘密</h2>
+            <h2 id="receive-title">我要接收秘密</h2>
             <p>生成密钥，保存私钥，复制加密链接发给别人。收到密文后在这里解密。</p>
           </div>
           <button id="generate-key" type="button">生成密钥对</button>
         </div>
-        <div class="field-grid">
-          <label>
-            <span>私钥</span>
-            <textarea id="private-key" spellcheck="false" placeholder="base58 私钥，请复制到安全位置保存"></textarea>
-          </label>
-          <label>
-            <span>加密链接</span>
-            <textarea id="share-url" spellcheck="false" placeholder="生成密钥后显示，发给需要传递秘密的人"></textarea>
-          </label>
-        </div>
+        <label>
+          <span>私钥</span>
+          <textarea id="private-key" spellcheck="false" placeholder="base58 私钥，请复制到安全位置保存"></textarea>
+        </label>
         <input id="public-key" type="hidden" />
         <div class="actions compact-actions">
           <button id="copy-private-key" type="button" class="secondary">复制私钥</button>
@@ -75,6 +69,7 @@
           <textarea id="decrypt-package" spellcheck="false" placeholder="粘贴完整 base64 密文"></textarea>
         </label>
         <div class="actions">
+          <button id="paste-ciphertext" type="button" class="secondary">粘贴密文</button>
           <button id="decrypt" type="button">解密内容</button>
           <button id="copy-decrypted" type="button" class="secondary">复制明文</button>
         </div>
@@ -87,8 +82,8 @@
       <section class="panel explainer" aria-labelledby="crypto-title">
         <h2 id="crypto-title">加密原理</h2>
         <p>
-          ZeroChannel 使用 base58 ED25519 密钥，按 Yuan utils 的方式映射到 Curve25519，然后用 Curve25519
-          加密一次性 AES-GCM 数据密钥，正文由 AES-GCM 加密。
+          ZeroChannel 使用 base58 ED25519 密钥材料，并将其映射到 Curve25519 加密密钥。每次加密都会生成一次性
+          AES-GCM 数据密钥；Curve25519 负责保护这把数据密钥，正文由 AES-GCM 加密。
         </p>
         <p>
           Curve25519 属于现代椭圆曲线密码体系，常见于 Signal、age、libsodium 等系统；安全级别约为 128-bit。
@@ -96,7 +91,7 @@
         </p>
       </section>
 
-      <p id="status" class="status" role="status" aria-live="polite">准备就绪。</p>
+      <p id="status" class="status" role="status" aria-live="polite" hidden></p>
 
       <footer class="footer">
         <a href="https://github.com/zccz14/ZeroChannel" target="_blank" rel="noreferrer">开源项目</a>

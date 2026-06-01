@@ -22,7 +22,6 @@ const fields = {
   recipientPublicKey: document.querySelector("#recipient-public-key"),
   publicKey: document.querySelector("#public-key"),
   privateKey: document.querySelector("#private-key"),
-  shareUrl: document.querySelector("#share-url"),
   encryptPublicKey: document.querySelector("#encrypt-public-key"),
   plaintext: document.querySelector("#plaintext"),
   decryptPackage: document.querySelector("#decrypt-package"),
@@ -34,11 +33,13 @@ document.querySelector("#generate-key").addEventListener("click", generateKeyPai
 document.querySelector("#encrypt").addEventListener("click", runEncrypt);
 document.querySelector("#decrypt").addEventListener("click", runDecrypt);
 document.querySelector("#copy-private-key").addEventListener("click", () => copyField(fields.privateKey, "已复制私钥。"));
-document.querySelector("#copy-share-url").addEventListener("click", () => copyField(fields.shareUrl, "已复制加密链接。"));
+document.querySelector("#copy-share-url").addEventListener("click", copyShareUrl);
+document.querySelector("#paste-ciphertext").addEventListener("click", pasteCiphertext);
 document.querySelector("#copy-decrypted").addEventListener("click", () => copyField(fields.decrypted, "已复制明文。"));
 fields.receiveMode.addEventListener("click", () => setMode(modes.receive));
 fields.sendMode.addEventListener("click", () => setMode(modes.send));
 fields.encryptPublicKey.addEventListener("input", () => updateRecipientPublicKey(fields.encryptPublicKey.value));
+fields.privateKey.addEventListener("input", updatePublicKeyFromPrivateKey);
 
 initializeFromUrl();
 
@@ -49,7 +50,6 @@ function generateKeyPair() {
   fields.privateKey.value = encodeBase58(secretKey);
   fields.encryptPublicKey.value = fields.publicKey.value;
   persistPublicKey(fields.publicKey.value, modes.receive);
-  fields.shareUrl.value = createShareUrl(fields.publicKey.value);
   setStatus("已生成密钥。请保存私钥，并把加密链接发给对方。", "ok");
 }
 
@@ -310,7 +310,6 @@ function initializeFromUrl() {
   fields.publicKey.value = publicKey;
   fields.encryptPublicKey.value = publicKey;
   updateRecipientPublicKey(publicKey);
-  fields.shareUrl.value = publicKey ? createShareUrl(publicKey) : "";
   fields.decryptPackage.value = ciphertext;
   setMode(mode, false);
 
@@ -336,7 +335,7 @@ function setMode(mode, shouldPersist = true) {
 
   if (shouldPersist) {
     persistMode(nextMode);
-    setStatus(isSendMode ? "已切换到传递秘密。" : "已切换到接受秘密。", "ok");
+    setStatus(isSendMode ? "已切换到传递秘密。" : "已切换到接收秘密。", "ok");
   }
 }
 
@@ -375,8 +374,41 @@ function createCiphertextUrl(ciphertext) {
 
   url.searchParams.set(modeQueryName, modes.receive);
   url.searchParams.set(ciphertextQueryName, trimmedCiphertext);
-  url.searchParams.delete(publicKeyQueryName);
+  url.searchParams.set(publicKeyQueryName, fields.encryptPublicKey.value.trim());
   return url.toString();
+}
+
+function updatePublicKeyFromPrivateKey() {
+  const privateKey = fields.privateKey.value.trim();
+
+  if (!privateKey) {
+    return;
+  }
+
+  try {
+    const publicKey = publicKeyFromPrivateKey(privateKey);
+    fields.publicKey.value = publicKey;
+    fields.encryptPublicKey.value = publicKey;
+    updateRecipientPublicKey(publicKey);
+    persistPublicKey(publicKey, modes.receive);
+    setStatus("已根据私钥更新加密链接。", "ok");
+  } catch {
+    setStatus("私钥格式不正确，未更新加密链接。", "error");
+  }
+}
+
+function publicKeyFromPrivateKey(privateKey) {
+  const secretKey = decodeFixedBase58(privateKey, 64, "私钥");
+  const seed = secretKey.slice(0, 32);
+  const pair = nacl.sign.keyPair.fromSeed(seed);
+  const encodedPublicKey = encodeBase58(pair.publicKey);
+  const embeddedPublicKey = encodeBase58(secretKey.slice(32, 64));
+
+  if (encodedPublicKey !== embeddedPublicKey) {
+    throw new Error("私钥中的公钥校验失败。");
+  }
+
+  return encodedPublicKey;
 }
 
 function updateRecipientPublicKey(publicKey) {
@@ -399,7 +431,35 @@ async function copyField(field, message) {
   });
 }
 
+async function copyShareUrl() {
+  const publicKey = fields.publicKey.value.trim();
+
+  if (!publicKey) {
+    setStatus("请先生成密钥，或粘贴有效私钥。", "error");
+    return;
+  }
+
+  await presentErrors(async () => {
+    await navigator.clipboard.writeText(createShareUrl(publicKey));
+    setStatus("已复制加密链接。", "ok");
+  });
+}
+
+async function pasteCiphertext() {
+  await presentErrors(async () => {
+    fields.decryptPackage.value = await navigator.clipboard.readText();
+    setStatus("已粘贴密文。", "ok");
+  });
+}
+
+let statusTimer;
+
 function setStatus(message, tone = "neutral") {
+  window.clearTimeout(statusTimer);
   fields.status.textContent = message;
   fields.status.dataset.tone = tone;
+  fields.status.hidden = false;
+  statusTimer = window.setTimeout(() => {
+    fields.status.hidden = true;
+  }, 5000);
 }
