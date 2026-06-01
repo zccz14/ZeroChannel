@@ -317,9 +317,8 @@ function decodeBase58(value) {
 }
 
 function initializeFromUrl() {
-  const searchParams = new URLSearchParams(window.location.search);
   const fragmentPayload = readFragmentPayload();
-  const mode = normalizeMode(searchParams.get(modeQueryName));
+  const mode = normalizeMode(fragmentPayload.mode);
   const publicKey = fragmentPayload.publicKey;
   const ciphertext = fragmentPayload.ciphertext;
 
@@ -356,27 +355,31 @@ function setMode(mode, shouldPersist = true) {
 }
 
 function persistMode(mode) {
-  const url = new URL(window.location.href);
+  const url = createCleanUrl();
+  const fragmentParams = new URLSearchParams(window.location.hash.slice(1));
 
-  url.searchParams.set(modeQueryName, mode);
+  fragmentParams.set(modeQueryName, mode);
+  url.hash = fragmentParams.toString();
   window.history.replaceState(null, "", url);
 }
 
 function persistPublicKey(publicKey, mode) {
-  const url = new URL(window.location.href);
+  const url = createCleanUrl();
 
-  url.searchParams.set(modeQueryName, mode);
-  url.searchParams.delete(publicKeyQueryName);
-  url.hash = new URLSearchParams({ [publicKeyQueryName]: publicKey.trim() }).toString();
+  url.hash = new URLSearchParams({
+    [modeQueryName]: mode,
+    [publicKeyQueryName]: publicKey.trim(),
+  }).toString();
   window.history.replaceState(null, "", url);
 }
 
 function createShareUrl(publicKey) {
-  const url = new URL(window.location.href);
+  const url = createCleanUrl();
 
-  url.searchParams.set(modeQueryName, modes.send);
-  url.searchParams.delete(publicKeyQueryName);
-  url.hash = new URLSearchParams({ [publicKeyQueryName]: publicKey.trim() }).toString();
+  url.hash = new URLSearchParams({
+    [modeQueryName]: modes.send,
+    [publicKeyQueryName]: publicKey.trim(),
+  }).toString();
   return url.toString();
 }
 
@@ -387,21 +390,25 @@ function createCiphertextUrl(ciphertext) {
     return "";
   }
 
-  const url = new URL(window.location.href);
+  const url = createCleanUrl();
 
-  url.searchParams.set(modeQueryName, modes.receive);
-  url.searchParams.delete(publicKeyQueryName);
   url.hash = new URLSearchParams({
+    [modeQueryName]: modes.receive,
     [publicKeyQueryName]: fields.encryptPublicKey.value.trim(),
     [cipherTextFragmentName]: trimmedCiphertext,
   }).toString();
   return url.toString();
 }
 
+function createCleanUrl() {
+  return new URL(`${window.location.origin}${window.location.pathname}`);
+}
+
 function readFragmentPayload() {
   const fragmentParams = new URLSearchParams(window.location.hash.slice(1));
 
   return {
+    mode: fragmentParams.get(modeQueryName) || "",
     publicKey: fragmentParams.get(publicKeyQueryName) || "",
     ciphertext: fragmentParams.get(cipherTextFragmentName) || "",
   };
