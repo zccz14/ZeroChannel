@@ -8,7 +8,6 @@ const base58Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwx
 const modeQueryName = "mode";
 const publicKeyQueryName = "public_key";
 const cipherTextFragmentName = "cipher_text";
-const maxCiphertextUrlPayloadLength = 1024;
 const modes = {
   receive: "receive",
   send: "send",
@@ -61,13 +60,8 @@ async function runEncrypt() {
     const encodedCiphertext = encodeBase64Url(ciphertext);
     const ciphertextUrl = createCiphertextUrl(encodedCiphertext);
 
-    if (ciphertextUrl) {
-      await navigator.clipboard.writeText(ciphertextUrl);
-      setStatus("加密完成。密文较短，已复制可直接打开的密文链接。", "ok");
-    } else {
-      await navigator.clipboard.writeText(encodedCiphertext);
-      setStatus("加密完成。密文超过 1024 字符，已复制密文本身，请粘贴发送。", "ok");
-    }
+    await navigator.clipboard.writeText(ciphertextUrl);
+    setStatus("加密完成。已复制可直接打开的密文链接。", "ok");
   });
 }
 
@@ -387,11 +381,6 @@ function createShareUrl(publicKey) {
 
 function createCiphertextUrl(ciphertext) {
   const trimmedCiphertext = ciphertext.trim();
-
-  if (trimmedCiphertext.length > maxCiphertextUrlPayloadLength) {
-    return "";
-  }
-
   const url = createCleanUrl();
 
   url.hash = new URLSearchParams({
