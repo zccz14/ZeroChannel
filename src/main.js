@@ -7,7 +7,7 @@ const textDecoder = new TextDecoder();
 const base58Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 const modeQueryName = "mode";
 const publicKeyQueryName = "public_key";
-const payloadFragmentName = "payload";
+const cipherTextFragmentName = "cipher_text";
 const maxCiphertextUrlPayloadLength = 1024;
 const modes = {
   receive: "receive",
@@ -56,7 +56,7 @@ function generateKeyPair() {
 async function runEncrypt() {
   await presentErrors(async () => {
     const ciphertext = await encryptByPublicKeyAsync(textEncoder.encode(fields.plaintext.value), fields.encryptPublicKey.value);
-    const encodedCiphertext = encodeBase64(ciphertext);
+    const encodedCiphertext = encodeBase64Url(ciphertext);
     const ciphertextUrl = createCiphertextUrl(encodedCiphertext);
 
     if (ciphertextUrl) {
@@ -71,7 +71,7 @@ async function runEncrypt() {
 
 async function runDecrypt() {
   await presentErrors(async () => {
-    const encryptedData = decodeBase64Field(fields.decryptPackage.value, "密文");
+    const encryptedData = decodeBase64UrlField(fields.decryptPackage.value, "密文");
     const plaintext = await decryptByPrivateKeyAsync(encryptedData, fields.privateKey.value);
 
     fields.decrypted.value = textDecoder.decode(plaintext);
@@ -226,6 +226,21 @@ function encodeBase64(bytes) {
   return btoa(binary);
 }
 
+function encodeBase64Url(bytes) {
+  return encodeBase64(bytes).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+}
+
+function decodeBase64UrlField(value, label) {
+  const compact = value.trim();
+
+  if (!compact) {
+    throw new Error(`请填写${label}。`);
+  }
+
+  const base64 = compact.replaceAll("-", "+").replaceAll("_", "/");
+  return decodeBase64Field(base64.padEnd(Math.ceil(base64.length / 4) * 4, "="), label);
+}
+
 function encodeBase58(bytes) {
   let zeroCount = 0;
 
@@ -303,14 +318,7 @@ function decodeBase58(value) {
 
 function initializeFromUrl() {
   const searchParams = new URLSearchParams(window.location.search);
-  let fragmentPayload = { publicKey: "", ciphertext: "" };
-
-  try {
-    fragmentPayload = readFragmentPayload();
-  } catch (error) {
-    setStatus(error instanceof Error ? error.message : "链接载荷无效。", "error");
-  }
-
+  const fragmentPayload = readFragmentPayload();
   const mode = normalizeMode(searchParams.get(modeQueryName));
   const publicKey = fragmentPayload.publicKey || searchParams.get(publicKeyQueryName) || "";
   const ciphertext = fragmentPayload.ciphertext;
@@ -382,44 +390,20 @@ function createCiphertextUrl(ciphertext) {
 
   url.searchParams.set(modeQueryName, modes.receive);
   url.searchParams.delete(publicKeyQueryName);
-  url.hash = `${payloadFragmentName}=${encodeBase64UrlJson({
-    public_key: fields.encryptPublicKey.value.trim(),
-    ciphertext: trimmedCiphertext,
-  })}`;
+  url.hash = new URLSearchParams({
+    [publicKeyQueryName]: fields.encryptPublicKey.value.trim(),
+    [cipherTextFragmentName]: trimmedCiphertext,
+  }).toString();
   return url.toString();
 }
 
 function readFragmentPayload() {
-  const payload = new URLSearchParams(window.location.hash.slice(1)).get(payloadFragmentName);
+  const fragmentParams = new URLSearchParams(window.location.hash.slice(1));
 
-  if (!payload) {
-    return { publicKey: "", ciphertext: "" };
-  }
-
-  const decoded = decodeBase64UrlJson(payload);
   return {
-    publicKey: (decoded && decoded.public_key) || "",
-    ciphertext: (decoded && decoded.ciphertext) || "",
+    publicKey: fragmentParams.get(publicKeyQueryName) || "",
+    ciphertext: fragmentParams.get(cipherTextFragmentName) || "",
   };
-}
-
-function encodeBase64UrlJson(value) {
-  return encodeBase64(textEncoder.encode(JSON.stringify(value)))
-    .replaceAll("+", "-")
-    .replaceAll("/", "_")
-    .replaceAll("=", "");
-}
-
-function decodeBase64UrlJson(value) {
-  const base64 = value.replaceAll("-", "+").replaceAll("_", "/");
-  const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
-  const bytes = decodeBase64Field(padded, "链接载荷");
-
-  try {
-    return JSON.parse(textDecoder.decode(bytes));
-  } catch (error) {
-    throw new Error("链接载荷不是有效的 JSON。", { cause: error });
-  }
 }
 
 function updatePublicKeyFromPrivateKey() {
