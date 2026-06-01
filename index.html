@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="ZeroChannel 是一个纯浏览器运行的 Curve25519 与 AES-GCM 加密工具。"
+      content="ZeroChannel 是一个纯浏览器运行的 ED25519、Curve25519 与 AES-GCM 加密工具。"
     />
     <title>ZeroChannel</title>
   </head>
@@ -16,12 +16,12 @@
           <p class="kicker">ZeroChannel</p>
           <h1 id="page-title">本地生成、本地加密、本地解密。</h1>
           <p class="hero-copy">
-            使用 Curve25519 加密密钥与 AES-GCM 数据加密。所有操作只在浏览器内完成，不需要服务器。
+            使用 base58 ED25519 密钥，映射到 Curve25519 加密 AES-GCM 数据密钥。所有操作只在浏览器内完成。
           </p>
         </div>
         <aside class="note" aria-label="安全说明">
           <strong>格式说明</strong>
-          <span>加密结果包含临时公钥、随机 nonce、被包装的数据密钥和密文。</span>
+          <span>公钥会写入 URL Query。复制当前地址，就能把收件公钥传给别人。</span>
         </aside>
       </section>
 
@@ -29,18 +29,18 @@
         <div class="section-head">
           <div>
             <h2 id="keys-title">1. 生成加密密钥</h2>
-            <p>把公钥发给别人。私钥只保存在你自己这里。</p>
+            <p>公钥可分享，私钥只保存在你自己这里。密钥使用 base58 编码。</p>
           </div>
           <button id="generate-key" type="button">生成密钥对</button>
         </div>
         <div class="field-grid">
           <label>
             <span>公钥</span>
-            <textarea id="public-key" spellcheck="false" placeholder="生成后显示，可分享"></textarea>
+            <textarea id="public-key" spellcheck="false" placeholder="base58 公钥，会同步到 URL"></textarea>
           </label>
           <label>
             <span>私钥</span>
-            <textarea id="private-key" spellcheck="false" placeholder="生成后显示，请妥善保存"></textarea>
+            <textarea id="private-key" spellcheck="false" placeholder="base58 私钥，请妥善保存"></textarea>
           </label>
         </div>
       </section>
@@ -50,7 +50,7 @@
           <h2 id="encrypt-title">2. 加密</h2>
           <label>
             <span>收件人公钥</span>
-            <textarea id="encrypt-public-key" spellcheck="false" placeholder="粘贴对方公钥"></textarea>
+            <textarea id="encrypt-public-key" spellcheck="false" placeholder="粘贴对方 base58 公钥，或从 URL 自动读取"></textarea>
           </label>
           <label>
             <span>明文</span>
@@ -58,8 +58,8 @@
           </label>
           <button id="encrypt" type="button">加密内容</button>
           <label>
-            <span>加密包</span>
-            <textarea id="ciphertext" spellcheck="false" placeholder="加密后显示，可发送"></textarea>
+            <span>密文</span>
+            <textarea id="ciphertext" spellcheck="false" placeholder="base58 密文，加密后可发送"></textarea>
           </label>
         </section>
 
@@ -70,8 +70,8 @@
             <textarea id="decrypt-private-key" spellcheck="false" placeholder="粘贴你的私钥"></textarea>
           </label>
           <label>
-            <span>收到的加密包</span>
-            <textarea id="decrypt-package" spellcheck="false" placeholder="粘贴完整加密包"></textarea>
+            <span>收到的密文</span>
+            <textarea id="decrypt-package" spellcheck="false" placeholder="粘贴完整 base58 密文"></textarea>
           </label>
           <button id="decrypt" type="button">解密内容</button>
           <label>

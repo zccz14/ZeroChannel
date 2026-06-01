@@ -9,7 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@noble/curves": "^1.9.7"
+    "ed2curve": "^0.3.0",
+    "tweetnacl": "^1.0.3"
   },
   "devDependencies": {
     "vite": "^7.2.7"
