@@ -41,7 +41,7 @@ async function runEncrypt() {
   await presentErrors(async () => {
     const ciphertext = await encryptByPublicKeyAsync(textEncoder.encode(fields.plaintext.value), fields.encryptPublicKey.value);
 
-    fields.ciphertext.value = encodeBase58(ciphertext);
+    fields.ciphertext.value = encodeBase64(ciphertext);
     fields.decryptPackage.value = fields.ciphertext.value;
     setStatus("加密完成。", "ok");
   });
@@ -49,7 +49,7 @@ async function runEncrypt() {
 
 async function runDecrypt() {
   await presentErrors(async () => {
-    const encryptedData = decodeBase58Field(fields.decryptPackage.value, "密文");
+    const encryptedData = decodeBase64Field(fields.decryptPackage.value, "密文");
     const plaintext = await decryptByPrivateKeyAsync(encryptedData, fields.decryptPrivateKey.value);
 
     fields.decrypted.value = textDecoder.decode(plaintext);
@@ -169,6 +169,39 @@ function decodeBase58Field(value, label) {
   }
 
   return decodeBase58(compact);
+}
+
+function decodeBase64Field(value, label) {
+  const compact = value.trim();
+
+  if (!compact) {
+    throw new Error(`请填写${label}。`);
+  }
+
+  try {
+    const binary = atob(compact);
+    const bytes = new Uint8Array(binary.length);
+
+    for (let index = 0; index < binary.length; index += 1) {
+      bytes[index] = binary.charCodeAt(index);
+    }
+
+    return bytes;
+  } catch (error) {
+    throw new Error(`${label} 不是有效的 base64。`, { cause: error });
+  }
+}
+
+function encodeBase64(bytes) {
+  let binary = "";
+  const chunkSize = 8192;
+
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    const chunk = bytes.slice(offset, offset + chunkSize);
+    binary += String.fromCharCode(...chunk);
+  }
+
+  return btoa(binary);
 }
 
 function encodeBase58(bytes) {
