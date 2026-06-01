@@ -16,7 +16,7 @@
           <p class="kicker">ZeroChannel</p>
           <h1 id="page-title">用一个链接传递秘密。</h1>
           <p class="hero-copy">
-            接收者生成密钥和加密链接，发送者打开链接加密内容。密钥和密文处理都只在浏览器内完成。
+            接收者生成密钥和加密链接，发送者打开链接输入明文。密钥和密文处理都只在浏览器内完成。
           </p>
         </div>
         <nav class="mode-switch" aria-label="选择用途">
@@ -29,30 +29,22 @@
         <div class="section-head">
           <div>
             <h2 id="send-title">我要传递秘密</h2>
-            <p>确认链接里的收件人公钥，输入明文。短密文会生成链接，长密文需要复制粘贴。</p>
+            <p>输入明文，点击一次完成加密和复制。短密文复制链接，长密文复制密文本身。</p>
           </div>
         </div>
-        <label>
+        <div class="recipient-card" aria-label="收件人公钥">
           <span>收件人公钥</span>
-          <textarea id="encrypt-public-key" spellcheck="false" placeholder="从 URL 自动读取，或粘贴 base58 公钥"></textarea>
-        </label>
+          <code id="recipient-public-key">未读取到公钥</code>
+          <details>
+            <summary>修改公钥</summary>
+            <textarea id="encrypt-public-key" spellcheck="false" placeholder="从 URL 自动读取，或粘贴 base58 公钥"></textarea>
+          </details>
+        </div>
         <label>
           <span>明文</span>
           <textarea id="plaintext" spellcheck="false" placeholder="输入要传递的秘密"></textarea>
         </label>
-        <div class="actions">
-          <button id="encrypt" type="button">加密内容</button>
-          <button id="copy-ciphertext" type="button" class="secondary">复制密文</button>
-          <button id="copy-ciphertext-url" type="button" class="secondary">复制密文链接</button>
-        </div>
-        <label>
-          <span>密文链接</span>
-          <textarea id="ciphertext-url" spellcheck="false" placeholder="密文不超过 1024 字符时自动生成"></textarea>
-        </label>
-        <label>
-          <span>密文</span>
-          <textarea id="ciphertext" spellcheck="false" placeholder="base64 密文，加密后复制给接收者"></textarea>
-        </label>
+        <button id="encrypt" type="button" class="full-action">加密并复制密文</button>
       </section>
 
       <section id="receive-view" class="panel purpose-view" aria-labelledby="receive-title">
@@ -92,7 +84,24 @@
         </label>
       </section>
 
+      <section class="panel explainer" aria-labelledby="crypto-title">
+        <h2 id="crypto-title">加密原理</h2>
+        <p>
+          ZeroChannel 使用 base58 ED25519 密钥，按 Yuan utils 的方式映射到 Curve25519，然后用 Curve25519
+          加密一次性 AES-GCM 数据密钥，正文由 AES-GCM 加密。
+        </p>
+        <p>
+          Curve25519 属于现代椭圆曲线密码体系，常见于 Signal、age、libsodium 等系统；安全级别约为 128-bit。
+          Solana 使用 ED25519 做签名，本工具使用同类 ED25519 密钥材料，但用途是加密而不是链上签名。
+        </p>
+      </section>
+
       <p id="status" class="status" role="status" aria-live="polite">准备就绪。</p>
+
+      <footer class="footer">
+        <a href="https://github.com/zccz14/ZeroChannel" target="_blank" rel="noreferrer">开源项目</a>
+        <span>欢迎进行安全审计。</span>
+      </footer>
     </main>
     <script type="module" src="/src/main.js"></script>
   </body>

@@ -19,13 +19,12 @@ const fields = {
   receiveView: document.querySelector("#receive-view"),
   sendMode: document.querySelector("#send-mode"),
   receiveMode: document.querySelector("#receive-mode"),
+  recipientPublicKey: document.querySelector("#recipient-public-key"),
   publicKey: document.querySelector("#public-key"),
   privateKey: document.querySelector("#private-key"),
   shareUrl: document.querySelector("#share-url"),
   encryptPublicKey: document.querySelector("#encrypt-public-key"),
   plaintext: document.querySelector("#plaintext"),
-  ciphertext: document.querySelector("#ciphertext"),
-  ciphertextUrl: document.querySelector("#ciphertext-url"),
   decryptPackage: document.querySelector("#decrypt-package"),
   decrypted: document.querySelector("#decrypted"),
   status: document.querySelector("#status"),
@@ -36,11 +35,10 @@ document.querySelector("#encrypt").addEventListener("click", runEncrypt);
 document.querySelector("#decrypt").addEventListener("click", runDecrypt);
 document.querySelector("#copy-private-key").addEventListener("click", () => copyField(fields.privateKey, "已复制私钥。"));
 document.querySelector("#copy-share-url").addEventListener("click", () => copyField(fields.shareUrl, "已复制加密链接。"));
-document.querySelector("#copy-ciphertext").addEventListener("click", () => copyField(fields.ciphertext, "已复制密文。"));
-document.querySelector("#copy-ciphertext-url").addEventListener("click", () => copyField(fields.ciphertextUrl, "已复制密文链接。"));
 document.querySelector("#copy-decrypted").addEventListener("click", () => copyField(fields.decrypted, "已复制明文。"));
 fields.receiveMode.addEventListener("click", () => setMode(modes.receive));
 fields.sendMode.addEventListener("click", () => setMode(modes.send));
+fields.encryptPublicKey.addEventListener("input", () => updateRecipientPublicKey(fields.encryptPublicKey.value));
 
 initializeFromUrl();
 
@@ -58,15 +56,15 @@ function generateKeyPair() {
 async function runEncrypt() {
   await presentErrors(async () => {
     const ciphertext = await encryptByPublicKeyAsync(textEncoder.encode(fields.plaintext.value), fields.encryptPublicKey.value);
+    const encodedCiphertext = encodeBase64(ciphertext);
+    const ciphertextUrl = createCiphertextUrl(encodedCiphertext);
 
-    fields.ciphertext.value = encodeBase64(ciphertext);
-    fields.decryptPackage.value = fields.ciphertext.value;
-    fields.ciphertextUrl.value = createCiphertextUrl(fields.ciphertext.value);
-
-    if (fields.ciphertextUrl.value) {
-      setStatus("加密完成。密文较短，已生成可分享的密文链接。", "ok");
+    if (ciphertextUrl) {
+      await navigator.clipboard.writeText(ciphertextUrl);
+      setStatus("加密完成。密文较短，已复制可直接打开的密文链接。", "ok");
     } else {
-      setStatus("加密完成。密文超过 1024 字符，请复制密文粘贴发送。", "ok");
+      await navigator.clipboard.writeText(encodedCiphertext);
+      setStatus("加密完成。密文超过 1024 字符，已复制密文本身，请粘贴发送。", "ok");
     }
   });
 }
@@ -311,6 +309,7 @@ function initializeFromUrl() {
 
   fields.publicKey.value = publicKey;
   fields.encryptPublicKey.value = publicKey;
+  updateRecipientPublicKey(publicKey);
   fields.shareUrl.value = publicKey ? createShareUrl(publicKey) : "";
   fields.decryptPackage.value = ciphertext;
   setMode(mode, false);
@@ -378,6 +377,12 @@ function createCiphertextUrl(ciphertext) {
   url.searchParams.set(ciphertextQueryName, trimmedCiphertext);
   url.searchParams.delete(publicKeyQueryName);
   return url.toString();
+}
+
+function updateRecipientPublicKey(publicKey) {
+  const compactPublicKey = publicKey.trim();
+
+  fields.recipientPublicKey.textContent = compactPublicKey ? compactPublicKey : "未读取到公钥";
 }
 
 async function copyField(field, message) {

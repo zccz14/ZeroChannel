@@ -56,7 +56,9 @@ button:active {
 }
 
 button:focus-visible,
-textarea:focus-visible {
+textarea:focus-visible,
+summary:focus-visible,
+a:focus-visible {
   outline: 3px solid var(--ring);
   outline-offset: 2px;
 }
@@ -146,6 +148,14 @@ h2 {
   padding: 22px;
 }
 
+.explainer {
+  margin-top: 18px;
+}
+
+.explainer p {
+  max-width: 74ch;
+}
+
 .purpose-view[hidden] {
   display: none;
 }
@@ -177,6 +187,36 @@ label {
   margin-bottom: 14px;
 }
 
+.recipient-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 12px;
+}
+
+.recipient-card span,
+summary {
+  color: var(--accent);
+  font-size: 0.9rem;
+  font-weight: 750;
+}
+
+.recipient-card code {
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+summary {
+  cursor: pointer;
+}
+
+details textarea {
+  margin-top: 10px;
+}
+
 label span {
   color: var(--accent);
   font-size: 0.9rem;
@@ -205,6 +245,10 @@ textarea::placeholder {
   margin: 6px 0 14px;
 }
 
+.full-action {
+  width: 100%;
+}
+
 .compact-actions {
   margin-top: 0;
 }
@@ -224,6 +268,26 @@ textarea::placeholder {
 
 .status[data-tone="error"] {
   color: var(--danger);
+}
+
+.footer {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.footer a {
+  color: var(--accent);
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.footer a:hover {
+  text-decoration: underline;
 }
 
 @media (max-width: 760px) {
