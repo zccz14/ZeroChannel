@@ -41,6 +41,8 @@ fields.sendMode.addEventListener("click", () => setMode(modes.send));
 fields.encryptPublicKey.addEventListener("input", () => updateRecipientPublicKey(fields.encryptPublicKey.value));
 fields.privateKey.addEventListener("input", updatePublicKeyFromPrivateKey);
 
+let statusTimer;
+
 initializeFromUrl();
 
 function generateKeyPair() {
@@ -487,8 +489,6 @@ async function pasteCiphertext() {
     setStatus("已粘贴密文。", "ok");
   });
 }
-
-let statusTimer;
 
 function setStatus(message, tone = "neutral") {
   window.clearTimeout(statusTimer);
