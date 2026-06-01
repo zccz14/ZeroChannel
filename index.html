@@ -84,12 +84,12 @@
       <section class="panel explainer" aria-labelledby="crypto-title">
         <h2 id="crypto-title">加密原理</h2>
         <p>
-          ZeroChannel 使用 base58 ED25519 密钥材料，并将其映射到 Curve25519 加密密钥。每次加密都会生成一次性
-          AES-GCM 数据密钥；Curve25519 负责保护这把数据密钥，正文由 AES-GCM 加密。
+          可以把公钥理解成一个只能投递、不能取出的收件箱：别人拿到你的公钥后，可以把消息加密后发给你；只有你手里的私钥，
+          才能打开这份密文。私钥不需要发给任何人，也不会上传到服务器。
         </p>
         <p>
-          Curve25519 属于现代椭圆曲线密码体系，常见于 Signal、age、libsodium 等系统；安全级别约为 128-bit。
-          Solana 使用 ED25519 做签名，本工具使用同类 ED25519 密钥材料，但用途是加密而不是链上签名。
+          实际加密时，浏览器会为每条消息随机生成一把一次性内容钥匙，用 AES-GCM 锁住正文；再用接收者的公钥保护这把内容钥匙。
+          ZeroChannel 使用常见的 base58 ED25519 密钥格式，并在加密时转换为 Curve25519，安全级别约为 128-bit。
         </p>
       </section>
 
