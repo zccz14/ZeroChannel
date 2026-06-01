@@ -33,16 +33,16 @@
         <div class="section-head">
           <div>
             <h2 id="send-title">我要传递秘密</h2>
-            <p>输入明文，点击一次完成加密和复制。短密文复制链接，长密文复制密文本身。</p>
+            <p>输入明文，点击一次完成加密和复制。</p>
           </div>
         </div>
-        <div class="recipient-card" aria-label="收件人公钥">
-          <span>收件人公钥</span>
+        <div class="recipient-card" aria-label="接收者公钥">
+          <div class="recipient-card-head">
+            <span>接收者公钥</span>
+            <button id="edit-recipient-public-key" type="button" class="secondary compact-button">修改</button>
+          </div>
           <code id="recipient-public-key">未读取到公钥</code>
-          <details>
-            <summary>修改公钥</summary>
-            <textarea id="encrypt-public-key" spellcheck="false" placeholder="从 URL 自动读取，或粘贴 base58 公钥"></textarea>
-          </details>
+          <input id="encrypt-public-key" type="hidden" />
         </div>
         <label>
           <span>明文</span>

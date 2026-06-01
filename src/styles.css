@@ -204,6 +204,13 @@ summary {
   font-weight: 750;
 }
 
+.recipient-card-head {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
 .recipient-card code {
   color: var(--ink);
   overflow-wrap: anywhere;

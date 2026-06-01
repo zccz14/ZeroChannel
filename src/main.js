@@ -34,9 +34,9 @@ document.querySelector("#decrypt").addEventListener("click", runDecrypt);
 document.querySelector("#copy-private-key").addEventListener("click", () => copyField(fields.privateKey, "已复制私钥。"));
 document.querySelector("#copy-share-url").addEventListener("click", copyShareUrl);
 document.querySelector("#copy-decrypted").addEventListener("click", () => copyField(fields.decrypted, "已复制明文。"));
+document.querySelector("#edit-recipient-public-key").addEventListener("click", editRecipientPublicKey);
 fields.receiveMode.addEventListener("click", () => setMode(modes.receive));
 fields.sendMode.addEventListener("click", () => setMode(modes.send));
-fields.encryptPublicKey.addEventListener("input", () => updateRecipientPublicKey(fields.encryptPublicKey.value));
 fields.privateKey.addEventListener("input", updatePublicKeyFromPrivateKey);
 
 let statusTimer;
@@ -324,7 +324,7 @@ function initializeFromUrl() {
   setMode(mode, false);
 
   if (mode === modes.send && publicKey) {
-    setStatus("已从 URL 读取收件人公钥。", "ok");
+    setStatus("已从 URL 读取接收者公钥。", "ok");
   } else if (mode === modes.receive && ciphertext) {
     setStatus("已从 URL 读取密文。", "ok");
   }
@@ -441,6 +441,18 @@ function updateRecipientPublicKey(publicKey) {
   const compactPublicKey = publicKey.trim();
 
   fields.recipientPublicKey.textContent = compactPublicKey ? compactPublicKey : "未读取到公钥";
+}
+
+function editRecipientPublicKey() {
+  const nextPublicKey = window.prompt("输入接收者公钥", fields.encryptPublicKey.value.trim());
+
+  if (nextPublicKey === null) {
+    return;
+  }
+
+  fields.encryptPublicKey.value = nextPublicKey.trim();
+  updateRecipientPublicKey(fields.encryptPublicKey.value);
+  setStatus("已更新接收者公钥。", "ok");
 }
 
 async function copyField(field, message) {
