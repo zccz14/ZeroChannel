@@ -57,7 +57,6 @@ button:active {
 
 button:focus-visible,
 textarea:focus-visible,
-summary:focus-visible,
 a:focus-visible {
   outline: 3px solid var(--ring);
   outline-offset: 2px;
@@ -187,44 +186,24 @@ label {
   margin-bottom: 14px;
 }
 
-.recipient-card {
+.field-block {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.public-key-output {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
-  display: grid;
-  gap: 10px;
-  margin-bottom: 14px;
+  color: var(--ink);
+  min-height: 2.75rem;
+  overflow-wrap: anywhere;
   padding: 12px;
 }
 
-.recipient-card span,
-summary {
-  color: var(--accent);
-  font-size: 0.9rem;
-  font-weight: 750;
-}
-
-.recipient-card-head {
-  align-items: center;
-  display: flex;
-  gap: 10px;
-  justify-content: space-between;
-}
-
-.recipient-card code {
-  color: var(--ink);
-  overflow-wrap: anywhere;
-}
-
-summary {
-  cursor: pointer;
-}
-
-details textarea {
-  margin-top: 10px;
-}
-
-label span {
+label span,
+.field-block span {
   color: var(--accent);
   font-size: 0.9rem;
   font-weight: 750;

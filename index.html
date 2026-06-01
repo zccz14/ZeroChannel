@@ -33,15 +33,14 @@
         <div class="section-head">
           <div>
             <h2 id="send-title">我要传递秘密</h2>
-            <p>输入明文，点击一次完成加密和复制。</p>
           </div>
         </div>
-        <div class="recipient-card" aria-label="接收者公钥">
-          <div class="recipient-card-head">
+        <div class="field-block" aria-label="接收者公钥">
+          <span class="field-title-row">
             <span>接收者公钥</span>
             <button id="edit-recipient-public-key" type="button" class="secondary compact-button">修改</button>
-          </div>
-          <code id="recipient-public-key">未读取到公钥</code>
+          </span>
+          <code id="recipient-public-key" class="public-key-output">未读取到公钥</code>
           <input id="encrypt-public-key" type="hidden" />
         </div>
         <label>
