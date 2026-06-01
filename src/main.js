@@ -59,8 +59,17 @@ async function runEncrypt() {
     const encodedCiphertext = encodeBase64Url(ciphertext);
     const ciphertextUrl = createCiphertextUrl(encodedCiphertext);
 
-    await navigator.clipboard.writeText(ciphertextUrl);
-    setStatus("加密完成。已复制可直接打开的密文链接。", "ok");
+    try {
+      await navigator.clipboard.writeText(ciphertextUrl);
+      setStatus("加密完成。已复制可直接打开的密文链接。", "ok");
+    } catch (error) {
+      if (!isClipboardPermissionError(error)) {
+        throw error;
+      }
+
+      window.history.replaceState(null, "", ciphertextUrl);
+      setStatus("加密完成，但浏览器不允许自动复制。请复制地址栏中的密文链接。", "ok");
+    }
   });
 }
 
@@ -158,6 +167,10 @@ async function decrypt(data, base58Key) {
 
 function importAesKey(keyBytes) {
   return crypto.subtle.importKey("raw", keyBytes, "AES-GCM", false, ["encrypt", "decrypt"]);
+}
+
+function isClipboardPermissionError(error) {
+  return error instanceof DOMException && error.name === "NotAllowedError";
 }
 
 async function presentErrors(action) {
