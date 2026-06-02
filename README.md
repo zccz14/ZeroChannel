@@ -31,7 +31,7 @@ ZeroChannel 适合需要临时、安全地传递一段秘密的人，例如：
 如果 GitHub Pages 已启用，可以访问：
 
 ```text
-https://zccz14.github.io/ZeroChannel/
+https://zch.zccz14.com
 ```
 
 也可以克隆仓库后在本地运行，见下方“本地开发”。
