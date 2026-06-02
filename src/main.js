@@ -382,11 +382,11 @@ function persistMode(mode) {
 
 function persistPublicKey(publicKey, mode) {
   const url = createCleanUrl();
+  const fragmentParams = new URLSearchParams(window.location.hash.slice(1));
 
-  url.hash = new URLSearchParams({
-    [modeQueryName]: mode,
-    [publicKeyQueryName]: publicKey.trim(),
-  }).toString();
+  fragmentParams.set(modeQueryName, mode);
+  fragmentParams.set(publicKeyQueryName, publicKey.trim());
+  url.hash = fragmentParams.toString();
   window.history.replaceState(null, "", url);
 }
 
