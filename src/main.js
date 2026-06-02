@@ -38,6 +38,8 @@ document.querySelector("#edit-recipient-public-key").addEventListener("click", e
 fields.receiveMode.addEventListener("click", () => setMode(modes.receive));
 fields.sendMode.addEventListener("click", () => setMode(modes.send));
 fields.privateKey.addEventListener("input", updatePublicKeyFromPrivateKey);
+fields.decryptPackage.addEventListener("input", persistCiphertextFromInput);
+window.addEventListener("hashchange", renderFromFragment);
 
 let statusTimer;
 
@@ -45,19 +47,20 @@ initializeFromUrl();
 
 function generateKeyPair() {
   const { publicKey, secretKey } = nacl.sign.keyPair();
+  const encodedPublicKey = encodeBase58(publicKey);
 
-  fields.publicKey.value = encodeBase58(publicKey);
   fields.privateKey.value = encodeBase58(secretKey);
-  fields.encryptPublicKey.value = fields.publicKey.value;
-  persistPublicKey(fields.publicKey.value, modes.receive);
+  persistPublicKey(encodedPublicKey, modes.receive);
+  renderFromFragment();
   setStatus("已生成密钥。请保存私钥，并把加密链接发给对方。", "ok");
 }
 
 async function runEncrypt() {
   await presentErrors(async () => {
-    const ciphertext = await encryptByPublicKeyAsync(textEncoder.encode(fields.plaintext.value), fields.encryptPublicKey.value);
+    const publicKey = readFragmentPayload().publicKey;
+    const ciphertext = await encryptByPublicKeyAsync(textEncoder.encode(fields.plaintext.value), publicKey);
     const encodedCiphertext = encodeBase64Url(ciphertext);
-    const ciphertextUrl = createCiphertextUrl(encodedCiphertext);
+    const ciphertextUrl = createCiphertextUrl(encodedCiphertext, publicKey);
 
     try {
       await navigator.clipboard.writeText(ciphertextUrl);
@@ -68,6 +71,7 @@ async function runEncrypt() {
       }
 
       window.history.replaceState(null, "", ciphertextUrl);
+      renderFromFragment();
       setStatus("加密完成，但浏览器不允许自动复制。请复制地址栏中的密文链接。", "ok");
     }
   });
@@ -75,7 +79,7 @@ async function runEncrypt() {
 
 async function runDecrypt() {
   await presentErrors(async () => {
-    const encryptedData = decodeBase64UrlField(fields.decryptPackage.value, "密文");
+    const encryptedData = decodeBase64UrlField(readFragmentPayload().ciphertext, "密文");
     const plaintext = await decryptByPrivateKeyAsync(encryptedData, fields.privateKey.value);
 
     fields.decrypted.value = textDecoder.decode(plaintext);
@@ -330,11 +334,7 @@ function initializeFromUrl() {
   const publicKey = fragmentPayload.publicKey;
   const ciphertext = fragmentPayload.ciphertext;
 
-  fields.publicKey.value = publicKey;
-  fields.encryptPublicKey.value = publicKey;
-  updateRecipientPublicKey(publicKey);
-  fields.decryptPackage.value = ciphertext;
-  setMode(mode, false);
+  renderFromFragment();
 
   if (mode === modes.send && publicKey) {
     setStatus("已从 URL 读取接收者公钥。", "ok");
@@ -347,19 +347,28 @@ function normalizeMode(mode) {
   return mode === modes.send ? modes.send : modes.receive;
 }
 
-function setMode(mode, shouldPersist = true) {
+function setMode(mode) {
   const nextMode = normalizeMode(mode);
   const isSendMode = nextMode === modes.send;
 
+  persistMode(nextMode);
+  renderFromFragment();
+  setStatus(isSendMode ? "已切换到传递秘密。" : "已切换到接收秘密。", "ok");
+}
+
+function renderFromFragment() {
+  const fragmentPayload = readFragmentPayload();
+  const mode = normalizeMode(fragmentPayload.mode);
+  const isSendMode = mode === modes.send;
+
+  fields.publicKey.value = fragmentPayload.publicKey;
+  fields.encryptPublicKey.value = fragmentPayload.publicKey;
+  updateRecipientPublicKey(fragmentPayload.publicKey);
+  fields.decryptPackage.value = fragmentPayload.ciphertext;
   fields.sendView.hidden = !isSendMode;
   fields.receiveView.hidden = isSendMode;
   fields.sendMode.setAttribute("aria-pressed", String(isSendMode));
   fields.receiveMode.setAttribute("aria-pressed", String(!isSendMode));
-
-  if (shouldPersist) {
-    persistMode(nextMode);
-    setStatus(isSendMode ? "已切换到传递秘密。" : "已切换到接收秘密。", "ok");
-  }
 }
 
 function persistMode(mode) {
@@ -391,13 +400,13 @@ function createShareUrl(publicKey) {
   return url.toString();
 }
 
-function createCiphertextUrl(ciphertext) {
+function createCiphertextUrl(ciphertext, publicKey) {
   const trimmedCiphertext = ciphertext.trim();
   const url = createCleanUrl();
 
   url.hash = new URLSearchParams({
     [modeQueryName]: modes.receive,
-    [publicKeyQueryName]: fields.encryptPublicKey.value.trim(),
+    [publicKeyQueryName]: publicKey.trim(),
     [cipherTextFragmentName]: trimmedCiphertext,
   }).toString();
   return url.toString();
@@ -426,10 +435,8 @@ function updatePublicKeyFromPrivateKey() {
 
   try {
     const publicKey = publicKeyFromPrivateKey(privateKey);
-    fields.publicKey.value = publicKey;
-    fields.encryptPublicKey.value = publicKey;
-    updateRecipientPublicKey(publicKey);
     persistPublicKey(publicKey, modes.receive);
+    renderFromFragment();
     setStatus("已根据私钥更新加密链接。", "ok");
   } catch {
     setStatus("私钥格式不正确，未更新加密链接。", "error");
@@ -457,16 +464,19 @@ function updateRecipientPublicKey(publicKey) {
 }
 
 function editRecipientPublicKey() {
-  const nextPublicKey = window.prompt("输入接收者公钥", fields.encryptPublicKey.value.trim());
+  const nextPublicKey = window.prompt("输入接收者公钥", readFragmentPayload().publicKey);
 
   if (nextPublicKey === null) {
     return;
   }
 
-  fields.encryptPublicKey.value = nextPublicKey.trim();
-  updateRecipientPublicKey(fields.encryptPublicKey.value);
-  persistFragmentParam(publicKeyQueryName, fields.encryptPublicKey.value);
+  persistFragmentParam(publicKeyQueryName, nextPublicKey);
+  renderFromFragment();
   setStatus("已更新接收者公钥。", "ok");
+}
+
+function persistCiphertextFromInput() {
+  persistFragmentParam(cipherTextFragmentName, fields.decryptPackage.value);
 }
 
 function persistFragmentParam(name, value) {
@@ -493,7 +503,7 @@ async function copyField(field, message) {
 }
 
 async function copyShareUrl() {
-  const publicKey = fields.publicKey.value.trim();
+  const publicKey = readFragmentPayload().publicKey;
 
   if (!publicKey) {
     setStatus("请先生成密钥，或粘贴有效私钥。", "error");
