@@ -1,5 +1,7 @@
 # ZeroChannel
 
+[立即使用 ZeroChannel](https://zch.zccz14.com)
+
 ZeroChannel 是一个纯浏览器运行的加密小工具：接收者生成密钥和加密链接，发送者打开链接输入明文，浏览器在本地完成加密并生成可传回的密文链接。
 
 它不需要账号、服务器、数据库或网络请求。密钥和明文不会离开当前浏览器。
@@ -28,11 +30,7 @@ ZeroChannel 适合需要临时、安全地传递一段秘密的人，例如：
 
 ## 在线使用
 
-如果 GitHub Pages 已启用，可以访问：
-
-```text
-https://zch.zccz14.com
-```
+打开 [https://zch.zccz14.com](https://zch.zccz14.com) 即可使用。
 
 也可以克隆仓库后在本地运行，见下方“本地开发”。
 
